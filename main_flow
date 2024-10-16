@@ -1,0 +1,130 @@
+#include <stdio.h>
+#include <string.h>
+
+int selectedGame(); 
+void gameFlow(int selectedGame);
+void mobileLegend();
+void printFormattedPrice(int price);
+
+typedef struct {
+    int diamondQty;
+    int price;
+} DiamondPackage;
+
+int main() {
+    int selectedNumberGame;
+    printf("Selamat Datang di TopUpExpress\n\n");
+    selectedNumberGame = selectedGame();
+    gameFlow(selectedNumberGame);
+    return 0;
+}
+
+void gameFlow(int selectedGame) {
+    printf("\n------------------------\n");
+    switch (selectedGame) {
+        case 1:
+            mobileLegend();
+            break;
+        default:
+            printf("Opsi tidak valid.\n");
+            break;
+    }
+}
+
+void mobileLegend() {
+    int diamondPackage[50], totalPrice = 0;
+    char isConfirm[3], email[100];
+    DiamondPackage diamondPackages[] = {
+        {250, 50000},
+        {500, 110000},
+        {1000, 160000},
+    };
+    int totalDiamond = sizeof(diamondPackages) / sizeof(diamondPackages[0]);
+    
+    int userId;
+    int qty;
+    printf("Silahkan masukkan User ID\n");
+    printf("User ID: ");
+    scanf("%d", &userId); 
+    printf("User ID: %d Tervalidasi ✅\n\n", userId);
+    
+    printf("Silahkan masukkan jumlah item yang dibeli: ");
+    scanf("%d", &qty); 
+    
+    for (int i = 0; i < qty; i++) {
+        printf("\nSilahkan Pilih Diamond Package:\n");
+        printf("Pilih Item ke-%d\n", i + 1);
+        
+        for (int j = 0; j < totalDiamond; j++) { 
+            printf("%d. %d Diamond = ", j + 1, diamondPackages[j].diamondQty);
+            printFormattedPrice(diamondPackages[j].price);
+            printf("\n");
+        }
+        
+        printf("Pilih paket: ");
+        scanf("%d", &diamondPackage[i]);
+        
+        if (diamondPackage[i] < 1 || diamondPackage[i] > totalDiamond) {
+            printf("Pilihan tidak valid. Silahkan coba lagi.\n");
+            i--; 
+        }
+    }
+    
+    printf("\nPaket yang Anda pilih:\n");
+    for (int i = 0; i < qty; i++) {
+        int selectedIndex = diamondPackage[i] - 1;
+        printf("Paket ke-%d: %d Diamond\n", i + 1, diamondPackages[selectedIndex].diamondQty);
+        totalPrice += diamondPackages[selectedIndex].price;
+    }
+    printf("Dengan total harga: ");
+    printFormattedPrice(totalPrice);
+    printf("\n");
+    
+    printf("Apakah anda sudah yakin dengan pilihan anda (y/n): ");
+    scanf("%s", isConfirm);
+    
+    // Compare the user's input with "y"
+    if (strcmp("y", isConfirm) == 0) {
+        printf("Silahkan masukkan email anda: ");
+        scanf("%s", email);
+        printf("Email %s telah berhasil menerima pembelian %d diamond dengan total ", email, qty);
+        printFormattedPrice(totalPrice);
+        printf(".\n");
+    } else {
+        printf("Transaksi dibatalkan.\n");
+    }
+}
+
+void printFormattedPrice(int price) {
+    if (price < 1000) {
+        printf("Rp %d", price);
+        return;
+    }
+    
+    printFormattedPrice(price / 1000);
+    printf(".%03d", price % 1000);
+}
+
+int selectedGame() {
+    int selectedGame, index;
+    const char* games[] = {"Mobile Legends", "PUBG", "Free Fire"};
+    int totalGames = sizeof(games) / sizeof(games[0]);
+
+    printf("---------Menu----------\n");
+    for (index = 0; index < totalGames; index++) {
+        printf("%d. %s\n", index + 1, games[index]);
+    }
+
+    printf("Pilih opsi (");
+    for (index = 0; index < totalGames; index++) {
+        printf("%d", index + 1);
+        if (index < totalGames - 1) {
+            printf(", ");
+        }
+    }
+    printf("): ");
+
+    scanf("%d", &selectedGame);
+
+    return selectedGame;
+}
