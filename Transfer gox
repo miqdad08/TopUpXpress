@@ -1,0 +1,78 @@
+#include <stdio.h>
+#include <string.h>
+
+// Function to validate phone number
+int validatePhoneNumber(const char *phoneNumber) {
+    // Simple validation: check if the length is 10 digits
+    return strlen(phoneNumber) == 10;
+}
+
+// Function to validate PIN number
+int validatePIN(const char *pin) {
+    // Simple validation: check if the length is 4 digits
+    return strlen(pin) == 4;
+}
+
+// Function to check balance
+int checkBalance(double balance, double price) {
+    return balance >= price;
+}
+
+int main() {
+    char phoneNumber[11];
+    char pin[5];
+    double balance = 100.0; // Example balance
+    double packagePrice = 50.0; // Example package price
+
+    printf("GoX Payment Procedure\n");
+    printf("Redirecting to GoX website...\n");
+
+    // Step 1: Input Phone Number
+    while (1) {
+        printf("\nEnter your phone number: ");
+        scanf("%s", phoneNumber);
+
+        // Validate phone number
+        if (validatePhoneNumber(phoneNumber)) {
+            printf("Phone number is valid.\n");
+            break;
+        } else {
+            printf("Invalid phone number. Please try again.\n");
+        }
+    }
+
+    // Step 2: Input PIN Number
+    while (1) {
+        printf("\nEnter your PIN: ");
+        scanf("%s", pin);
+
+        // Validate PIN
+        if (validatePIN(pin)) {
+            printf("PIN is valid.\n");
+            break;
+        } else {
+            printf("Invalid PIN. Please try again.\n");
+        }
+    }
+
+    // Step 3: Process Payment
+    printf("\nProcessing payment for the package price of $%.2f...\n", packagePrice);
+
+    // Step 4: Validate Cash Balance
+    if (checkBalance(balance, packagePrice)) {
+        // Deduct the package price from the balance
+        balance -= packagePrice;
+        printf("Payment successful! Your new balance is $%.2f.\n", balance);
+
+        // Display receipt
+        printf("\nReceipt:\n");
+        printf("Name: John Doe\n");
+        printf("ID: 12345\n");
+        printf("Phone Number: %s\n", phoneNumber);
+        printf("Email: johndoe@example.com\n");
+    } else {
+        printf("Insufficient balance. Payment failed.\n");
+    }
+
+    return 0;
+}
