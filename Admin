@@ -1,0 +1,164 @@
+#include <stdio.h>
+#include <string.h>
+
+#define MAX_PACKAGES 100
+#define MAX_NAME_LEN 50
+#define MAX_DIAMOND_PACKAGES 3
+
+
+typedef struct {
+    char name[MAX_NAME_LEN];
+    float price;
+    int is_valid; 
+} GamePackage;
+
+
+typedef struct {
+    int diamonds;
+    float price;
+} DiamondPackage;
+
+
+GamePackage packages[MAX_PACKAGES];
+int package_count = 0;
+
+
+DiamondPackage diamondPackages[MAX_DIAMOND_PACKAGES] = {
+    {250, 50000.0},
+    {500, 100000.0},
+    {1000, 160000.0}
+};
+
+
+void display_menu();
+void add_package();
+void edit_package();
+void remove_package();
+void change_diamond_package();
+void display_diamond_packages();
+int find_package_index(const char *name);
+
+int main() {
+    int choice;
+
+    while (1) {
+        display_menu();
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1:
+                edit_package();
+                break;
+            case 2:
+                remove_package();
+                break;
+            case 3:
+                add_package();
+                break;
+            case 4:
+                change_diamond_package();
+                break;
+            case 5:
+                printf("Exiting the program.\n");
+                return 0;
+            default:
+                printf("Invalid choice. Please try again.\n");
+        }
+    }
+}
+
+void display_menu() {
+    printf("\nGame Package Management\n");
+    printf("1. Update game package\n");
+    printf("2. Remove game package\n");
+    printf("3. Input new game package\n");
+    printf("4. Change Diamond Package\n");
+    printf("5. Exit\n");
+}
+
+void add_package() {
+    if (package_count >= MAX_PACKAGES) {
+        printf("Package storage is full.\n");
+        return;
+    }
+
+    GamePackage new_package;
+    printf("Enter package name: ");
+    scanf("%s", new_package.name);
+    printf("Enter package price: ");
+    scanf("%f", &new_package.price);
+    new_package.is_valid = 1;
+
+    packages[package_count++] = new_package;
+    printf("Package added successfully.\n");
+}
+
+void edit_package() {
+    char name[MAX_NAME_LEN];
+    printf("Enter the name of the package you want to edit: ");
+    scanf("%s", name);
+
+    int index = find_package_index(name);
+    if (index == -1) {
+        printf("Package not found.\n");
+        return;
+    }
+
+    printf("Package found: %s, Price: %.2f\n", packages[index].name, packages[index].price);
+    printf("Enter new package name: ");
+    scanf("%s", packages[index].name);
+    printf("Enter new package price: ");
+    scanf("%f", &packages[index].price);
+    printf("Package updated successfully.\n");
+}
+
+void remove_package() {
+    char name[MAX_NAME_LEN];
+    printf("Enter the name of the package you want to remove: ");
+    scanf("%s", name);
+
+    int index = find_package_index(name);
+    if (index == -1) {
+        printf("Package not found.\n");
+        return;
+    }
+
+    packages[index].is_valid = 0; 
+    printf("Package removed successfully.\n");
+}
+
+void change_diamond_package() {
+    int choice;
+    display_diamond_packages();
+    printf("Enter the number of the package to update (1-3): ");
+    scanf("%d", &choice);
+
+    if (choice < 1 || choice > MAX_DIAMOND_PACKAGES) {
+        printf("Invalid choice.\n");
+        return;
+    }
+
+    printf("Enter new number of diamonds: ");
+    scanf("%d", &diamondPackages[choice - 1].diamonds);
+    printf("Enter new price for the package: ");
+    scanf("%f", &diamondPackages[choice - 1].price);
+
+    printf("Diamond package updated successfully.\n");
+}
+
+void display_diamond_packages() {
+    printf("\nDiamond Packages:\n");
+    for (int i = 0; i < MAX_DIAMOND_PACKAGES; i++) {
+        printf("%d. %d Diamonds = %.2f\n", i + 1, diamondPackages[i].diamonds, diamondPackages[i].price);
+    }
+}
+
+int find_package_index(const char *name) {
+    for (int i = 0; i < package_count; i++) {
+        if (packages[i].is_valid && strcmp(packages[i].name, name) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
