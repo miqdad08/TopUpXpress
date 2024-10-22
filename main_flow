@@ -115,7 +115,8 @@ int cashierMenu(){
     int totalGames = sizeof(games) / sizeof(games[0]);
     int selectedNumberGame;
 
-    printf("Selamat Datang di TopUpExpress\n\n");
+    printf("\nSelamat Datang di TopUpExpress\n\n");
+    printf("Pilih game yang ingin Anda ingin top up:\n");
     selectedNumberGame = selectedGame(games, totalGames);
     gameFlow(selectedNumberGame, games);
 
@@ -131,7 +132,6 @@ void gameFlow(int selectedGame, Game *games) {
     int totalPackages;
 
     printf("\n------------------------\n");
-    printf("Pilih game yang ingin Anda ingin top up:\n");
     switch (selectedGame) {
         case 1:
             selectedPackages = packageMlItems;
@@ -173,57 +173,52 @@ void topUpGame(const char *gameName, PackageItem *packages, int totalPackages, i
     int selectedPackage[50];
     int userId;
     char isMoreThan1[3];
-    printf("Silahkan masukkan User ID %s\n", gameName);
-    printf("User ID: ");
-    scanf("%d", &userId); 
-    printf("User ID: %d Tervalidasi ✅\n\n", userId);
 
+    // Get User ID
+    printf("Silahkan masukkan User ID %s\n", gameName);
+    printf("User  ID: ");
+    scanf("%d", &userId); 
+    printf("User  ID: %d Tervalidasi ✅\n\n", userId);
+
+    // Ask if user wants to buy more than one package
     printf("Apakah anda ingin membeli paket lebih dari satu (y/n): ");
     scanf("%s", isMoreThan1);
 
+    // Determine quantity of packages to buy
     if (strcmp("y", isMoreThan1) == 0) {
         printf("Silahkan masukkan jumlah paket yang ingin dibeli: ");
         scanf("%d", qty);
-
-        for (int i = 0; i < *qty; i++) {
-            printf("\nSilahkan Pilih Paket %s:\n", packages[0].currencyType);
-            printf("Pilih Paket ke-%d\n", i + 1);
-
-            for (int j = 0; j < totalPackages; j++) { 
-                printf("%d. %d %s = ", j + 1, packages[j].diamondQty, packages[j].currencyType);
-                printFormattedPrice(packages[j].price);
-                printf("\n");
-            }
-
-            printf("Pilih paket: ");
-            scanf("%d", &selectedPackage[i]);
-
-            if (selectedPackage[i] < 1 || selectedPackage[i] > totalPackages) {
-                printf("Pilihan tidak valid. Silahkan coba lagi.\n");
-                i--; 
-            }
-        }
     } else {
-        *qty = 1;
-        printf("\nSilahkan Pilih Paket %s:\n", packages[0].currencyType);
+        *qty = 1; // Default to 1 if not buying more
+    }
 
+    // Loop through the number of packages to select
+    for (int i = 0; i < *qty; i++) {
+        printf("\nSilahkan Pilih Paket %s:\n", packages[0].currencyType);
+        printf("Pilih Paket ke-%d\n", i + 1);
+
+        // Display available packages
         for (int j = 0; j < totalPackages; j++) { 
             printf("%d. %d %s = ", j + 1, packages[j].diamondQty, packages[j].currencyType);
             printFormattedPrice(packages[j].price);
             printf("\n");
         }
 
+        // Get user's package selection
         printf("Pilih paket: ");
-        scanf("%d", &selectedPackage[0]);
-        if (selectedPackage[0] < 1 || selectedPackage[0] > totalPackages) {
+        scanf("%d", &selectedPackage[i]);
+
+        // Validate selection
+        if (selectedPackage[i] < 1 || selectedPackage[i] > totalPackages) {
             printf("Pilihan tidak valid. Silahkan coba lagi.\n");
-            topUpGame(gameName, packages, totalPackages, totalPrice, qty, totalAmount);
-            return;
+            i--; // Decrement index to retry
         }
     }
 
+    // Calculate total price and amount
     printf("\nPaket yang Anda pilih:\n");
     *totalAmount = 0; 
+    *totalPrice = 0; // Initialize totalPrice to 0
     for (int i = 0; i < *qty; i++) {
         int selectedIndex = selectedPackage[i] - 1;
         printf("Paket ke-%d: %d %s\n", i + 1, packages[selectedIndex].diamondQty, packages[selectedIndex].currencyType);
@@ -418,7 +413,7 @@ int adminMenu() {
     int choice;
 
     printf("\nSelamat Datang di Admin Panel\n\n");
-    printf("Pilih game yang ingin anda ubah :\n");
+    printf("Pilih game yang ingin anda ubah:\n");
     selectedNumberGame = selectedGame(games, totalGames);
 
     while (1) {
