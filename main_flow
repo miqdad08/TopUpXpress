@@ -1,130 +1,613 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <time.h>
+#include "typedef_class.c"
+// #include "admin_flow.c" 
 
-int selectedGame(); 
-void gameFlow(int selectedGame);
-void mobileLegend();
+// Hardcoded data login staff dan kepala gudang
+#define MAX_PACKAGES 100
+#define USERNAME_ADMIN "admin"
+#define PASSWORD_ADMIN "admin123"
+#define USERNAME_CASHIER "kasir"
+#define PASSWORD_CASHIER "kasir123"
+
+
+int selectedGame(Game *games, int totalGames); 
+int login(char *usernameInput, char *passwordInput, const char *usernameExpected, const char *passwordExpected);
+int cashierMenu();
+void gameFlow(int selectedGame, Game *games);
+void topUpGame(const char *gameName, PackageItem *packages, int totalPackages, int *totalPrice, int *qty, int *totalAmount);
 void printFormattedPrice(int price);
+void validateEmail(char email[100]);
+void paymentMethod(int *selectedPaymentMethod, int userId, char *email, int totalPrice, int package, int game);
+void paymentGoXDonoProcedure(int userId, char *email, int totalPrice, int package, char *paymentMethod, int game);
+void paymentMBankingProcedure(int userId, char *email, int totalPrice, int package, int game);
+int validatePIN(char *pin);
+int phoneNumberValidation(char *phoneNumber);
+void receiptPayment(char *phoneNumber, int userId, char *email, int totalPrice, int package, char *paymentMethod, int game);
+void viewPackageDetails(int game);
+int adminMenu();
+void addPackage(int game);
+void deletePackage(int game);
+void editPackage(int game);
 
-typedef struct {
-    int diamondQty;
-    int price;
-} DiamondPackage;
+PackageItem packageMlItems[MAX_PACKAGES] = {
+    {250, 50000, "Diamond"},
+    {500, 110000, "Diamond"},
+    {1000, 160000, "Diamond"},
+};
+
+PackageItem packagePubgItems[MAX_PACKAGES] = {
+    {30, 7000, "UC"},
+    {60, 14000, "UC"},
+    {300, 70000, "UC"},
+};
+
+PackageItem packageFfItems[MAX_PACKAGES] = {
+    {50, 7000, "Diamond"},
+    {100, 14000, "Diamond"},
+    {720, 90000, "Diamond"},
+};
+
+int totalPackageMlItems = 3;
+int totalPackagePubgItems = 3;
+int totalPackageFfItems = 3;
+
+Game games[] = {
+    {"Mobile Legend"},
+    {"PUBG"},
+    {"Free Fire"},
+};
 
 int main() {
+    int role;
+    char username[50], password[50];
+    while (1) {
+        printf("\nMenu Utama:\n");
+        printf("1. Admin\n");
+        printf("2. Kasir\n");
+        printf("3. Keluar\n");
+        printf("Masukkan pilihan Anda: ");
+        scanf("%d", &role);
+
+        switch (role) {
+            case 1:
+                printf("Masukkan username: ");
+                scanf("%s", username);
+                printf("Masukkan password: ");
+                scanf("%s", password);
+
+                if (login(username, password, USERNAME_ADMIN, PASSWORD_ADMIN)) {
+                    adminMenu();
+                }
+                break;
+            case 2:
+                printf("Masukkan username: ");
+                scanf("%s", username);
+                printf("Masukkan password: ");
+                scanf("%s", password);
+
+                if (login(username, password, USERNAME_CASHIER, PASSWORD_CASHIER)) {
+                    cashierMenu();  
+                }
+                break;
+            case 3:
+                printf("Terima kasih, program selesai.\n");
+                return 0; 
+            default:
+                printf("Pilihan tidak valid, coba lagi.\n");
+        }
+    }
+}
+
+int login(char *usernameInput, char *passwordInput, const char *usernameExpected, const char *passwordExpected) {
+    if (strcmp(usernameInput, usernameExpected) == 0 && strcmp(passwordInput, passwordExpected) == 0) {
+        printf("Login berhasil!\n");
+        return 1;  // Login berhasil
+    } else {
+        printf("Login gagal, username atau password salah.\n");
+        return 0;  // Login gagal
+    }
+}
+
+int cashierMenu(){
+    int totalGames = sizeof(games) / sizeof(games[0]);
     int selectedNumberGame;
+
     printf("Selamat Datang di TopUpExpress\n\n");
-    selectedNumberGame = selectedGame();
-    gameFlow(selectedNumberGame);
+    selectedNumberGame = selectedGame(games, totalGames);
+    gameFlow(selectedNumberGame, games);
+
     return 0;
 }
 
-void gameFlow(int selectedGame) {
+void gameFlow(int selectedGame, Game *games) {
+    int qty, totalPrice = 0;
+    int selectedPaymentMethod;
+    int totalAmount;
+    char isConfirm[3], email[100];
+    PackageItem *selectedPackages;
+    int totalPackages;
+
     printf("\n------------------------\n");
     switch (selectedGame) {
         case 1:
-            mobileLegend();
+            selectedPackages = packageMlItems;
+            totalPackages = totalPackageMlItems;
+            topUpGame("Mobile Legends", selectedPackages, totalPackages, &totalPrice, &qty, &totalAmount);
+            break;
+        case 2:
+            selectedPackages = packagePubgItems;
+            totalPackages = totalPackagePubgItems;
+            topUpGame("PUBG", selectedPackages, totalPackages, &totalPrice, &qty, &totalAmount);
+            break;
+        case 3:
+            selectedPackages = packageFfItems;
+            totalPackages = totalPackageFfItems;
+            topUpGame("Free Fire", selectedPackages, totalPackages, &totalPrice, &qty, &totalAmount);
             break;
         default:
             printf("Opsi tidak valid.\n");
             break;
     }
+
+    printf("Apakah anda sudah yakin dengan pilihan anda (y/n): ");
+    scanf("%s", isConfirm);
+    if (strcmp("y", isConfirm) == 0) {
+        validateEmail(email);
+        printf("Email %s telah berhasil menerima pembelian %d paket %s %s dengan total ",
+               email, qty, selectedPackages[0].currencyType, games[selectedGame - 1].name);
+        printFormattedPrice(totalPrice);
+        printf(".\n");
+        
+        paymentMethod(&selectedPaymentMethod, 12345, email, totalPrice, totalAmount, selectedGame);
+    } else {
+        printf("Transaksi dibatalkan.\n\n");
+        gameFlow(selectedGame, games);
+    }
 }
 
-void mobileLegend() {
-    int diamondPackage[50], totalPrice = 0;
-    char isConfirm[3], email[100];
-    DiamondPackage diamondPackages[] = {
-        {250, 50000},
-        {500, 110000},
-        {1000, 160000},
-    };
-    int totalDiamond = sizeof(diamondPackages) / sizeof(diamondPackages[0]);
-    
+void topUpGame(const char *gameName, PackageItem *packages, int totalPackages, int *totalPrice, int *qty, int *totalAmount) {
+    int selectedPackage[50];
     int userId;
-    int qty;
-    printf("Silahkan masukkan User ID\n");
+    char isMoreThan1[3];
+    printf("Silahkan masukkan User ID %s\n", gameName);
     printf("User ID: ");
     scanf("%d", &userId); 
     printf("User ID: %d Tervalidasi ✅\n\n", userId);
-    
-    printf("Silahkan masukkan jumlah item yang dibeli: ");
-    scanf("%d", &qty); 
-    
-    for (int i = 0; i < qty; i++) {
-        printf("\nSilahkan Pilih Diamond Package:\n");
-        printf("Pilih Item ke-%d\n", i + 1);
-        
-        for (int j = 0; j < totalDiamond; j++) { 
-            printf("%d. %d Diamond = ", j + 1, diamondPackages[j].diamondQty);
-            printFormattedPrice(diamondPackages[j].price);
+
+    printf("Apakah anda ingin membeli paket lebih dari satu (y/n): ");
+    scanf("%s", isMoreThan1);
+
+    if (strcmp("y", isMoreThan1) == 0) {
+        printf("Silahkan masukkan jumlah paket yang ingin dibeli: ");
+        scanf("%d", qty);
+
+        for (int i = 0; i < *qty; i++) {
+            printf("\nSilahkan Pilih Paket %s:\n", packages[0].currencyType);
+            printf("Pilih Paket ke-%d\n", i + 1);
+
+            for (int j = 0; j < totalPackages; j++) { 
+                printf("%d. %d %s = ", j + 1, packages[j].diamondQty, packages[j].currencyType);
+                printFormattedPrice(packages[j].price);
+                printf("\n");
+            }
+
+            printf("Pilih paket: ");
+            scanf("%d", &selectedPackage[i]);
+
+            if (selectedPackage[i] < 1 || selectedPackage[i] > totalPackages) {
+                printf("Pilihan tidak valid. Silahkan coba lagi.\n");
+                i--; 
+            }
+        }
+    } else {
+        *qty = 1;
+        printf("\nSilahkan Pilih Paket %s:\n", packages[0].currencyType);
+
+        for (int j = 0; j < totalPackages; j++) { 
+            printf("%d. %d %s = ", j + 1, packages[j].diamondQty, packages[j].currencyType);
+            printFormattedPrice(packages[j].price);
             printf("\n");
         }
-        
+
         printf("Pilih paket: ");
-        scanf("%d", &diamondPackage[i]);
-        
-        if (diamondPackage[i] < 1 || diamondPackage[i] > totalDiamond) {
+        scanf("%d", &selectedPackage[0]);
+        if (selectedPackage[0] < 1 || selectedPackage[0] > totalPackages) {
             printf("Pilihan tidak valid. Silahkan coba lagi.\n");
-            i--; 
+            topUpGame(gameName, packages, totalPackages, totalPrice, qty, totalAmount);
+            return;
         }
     }
-    
+
     printf("\nPaket yang Anda pilih:\n");
-    for (int i = 0; i < qty; i++) {
-        int selectedIndex = diamondPackage[i] - 1;
-        printf("Paket ke-%d: %d Diamond\n", i + 1, diamondPackages[selectedIndex].diamondQty);
-        totalPrice += diamondPackages[selectedIndex].price;
+    *totalAmount = 0; 
+    for (int i = 0; i < *qty; i++) {
+        int selectedIndex = selectedPackage[i] - 1;
+        printf("Paket ke-%d: %d %s\n", i + 1, packages[selectedIndex].diamondQty, packages[selectedIndex].currencyType);
+        *totalPrice += packages[selectedIndex].price; 
+        *totalAmount += packages[selectedIndex].diamondQty;
     }
     printf("Dengan total harga: ");
-    printFormattedPrice(totalPrice);
-    printf("\n");
-    
-    printf("Apakah anda sudah yakin dengan pilihan anda (y/n): ");
-    scanf("%s", isConfirm);
-    
-    // Compare the user's input with "y"
-    if (strcmp("y", isConfirm) == 0) {
+    printFormattedPrice(*totalPrice);
+    printf("\nTotal %s yang dibeli: %d\n\n", packages[0].currencyType, *totalAmount);
+}
+
+
+int selectedGame(Game *games, int totalGames) {
+    int choice;
+    printf("Pilih game yang ingin Anda top up:\n");
+    for (int i = 0; i < totalGames; i++) {
+        printf("%d. %s\n", i + 1, games[i].name);
+    }
+
+    printf("Masukkan pilihan (1-%d): ", totalGames);
+    scanf("%d", &choice);
+
+    if (choice < 1 || choice > totalGames) {
+        printf("Pilihan tidak valid, coba lagi.\n");
+        return selectedGame(games, totalGames); // Recursively call for valid input
+    }
+
+    return choice;
+}
+
+
+void validateEmail(char email[100]) {
+    do {
         printf("Silahkan masukkan email anda: ");
         scanf("%s", email);
-        printf("Email %s telah berhasil menerima pembelian %d diamond dengan total ", email, qty);
-        printFormattedPrice(totalPrice);
-        printf(".\n");
-    } else {
-        printf("Transaksi dibatalkan.\n");
+        if (strchr(email, '@') == NULL) {
+            printf("Email tidak valid. Email harus mengandung '@'. Silahkan coba lagi.\n");
+        }
+    } while (strchr(email, '@') == NULL);
+    printf("\n");
+}
+
+void paymentMethod(int *selectedPaymentMethod, int userId, char *email, int totalPrice, int package, int game) {
+    PaymentMethod paymentMethods[] = {
+        {"GoX"},
+        {"DONO"},
+        {"M-Banking"}
+    };
+    int totalMethods = sizeof(paymentMethods) / sizeof(paymentMethods[0]);
+
+    printf("Pilih Metode Pembayaran:\n");
+    for (int i = 0; i < totalMethods; i++) { 
+        printf("%d. %s\n", i + 1, paymentMethods[i].name);  
     }
+
+    printf("Pilih metode (1-%d): ", totalMethods);
+    scanf("%d", selectedPaymentMethod);
+
+    switch (*selectedPaymentMethod) {
+        case 1:
+            paymentGoXDonoProcedure(userId, email, totalPrice, package, paymentMethods[0].name, game);
+            break;
+        case 2:
+            paymentGoXDonoProcedure(userId, email, totalPrice, package, paymentMethods[1].name, game);
+            break;
+        case 3:
+            paymentMBankingProcedure(userId, email, totalPrice, package, game);
+            break;
+        default:
+            printf("Pilihan tidak valid. Silahkan coba lagi.\n");
+            paymentMethod(selectedPaymentMethod, userId, email, totalPrice, package, game); 
+            break;
+    }
+}
+
+void paymentGoXDonoProcedure(int userId, char *email, int totalPrice, int package, char *paymentMethod, int game) {
+    char phoneNumber[13];
+    char pin[5];
+    int isValid = 0;
+    
+    printf("\nRedirecting to %s apps...\n", paymentMethod);
+    do {
+        printf("Silahkan masukkan nomor telepon %s (harus terdiri dari 12 digit, dimulai dengan '08' atau '62'):\n", paymentMethod);
+        scanf("%s", phoneNumber);
+        
+        isValid = phoneNumberValidation(phoneNumber);
+        if (!isValid) {
+            printf("Nomor telepon tidak valid. Silahkan coba lagi.\n");
+        }
+    } while (!isValid);
+
+    printf("Nomor telepon %s tervalidasi dan digunakan untuk pembayaran %s.\n", phoneNumber, paymentMethod);
+
+    while (1) {
+        printf("Masukkan PIN Anda (4 digit): ");
+        scanf("%s", pin);
+        if (validatePIN(pin)) {
+            printf("PIN is valid.\n");
+            break;
+        } else {
+            printf("Invalid PIN. Please try again.\n");
+        }
+    }
+    receiptPayment(phoneNumber, userId, email, totalPrice, package, paymentMethod, game);
+}
+
+void paymentMBankingProcedure(int userId, char *email, int totalPrice, int package, int game) {
+    char virtualAccount[20];
+    char pin[5];
+
+    snprintf(virtualAccount, sizeof(virtualAccount), "19%013ld", (long)(rand() % 10000000000000));
+    
+    printf("\nRedirecting to m-banking...\n");
+    printf("Virtual Account Number: %s\n", virtualAccount);
+
+    while (1) {
+        printf("Masukkan PIN Anda (4 digit): ");
+        scanf("%s", pin);
+        if (validatePIN(pin)) {
+            printf("PIN is valid.\n");
+            break;
+        } else {
+            printf("Invalid PIN. Please try again.\n");
+        }
+    }
+
+    // Simulate payment receipt
+    receiptPayment(virtualAccount, userId, email, totalPrice, package, "m-banking", game);
+}
+
+
+void receiptPayment(char *phoneNumber, int userId, char *email, int totalPrice, int package, char *paymentMethod, int game) {
+    char isContinueShopping[3];
+    printf("\nPembayaran berhasil menggunakan %s\n", paymentMethod);
+    printf("Dengan paket ");
+
+    if (game == 1 || game == 3) {
+        printf("diamond %d", package);
+    } else if (game == 2) {
+        printf("UC %d", package);
+    }
+
+    printf(" seharga ");
+    printFormattedPrice(totalPrice);
+    printf("\nUser Id : %d\n", userId);
+     if (strcmp(paymentMethod, "m-banking") == 0) {
+        printf("Virtual Account: %s\n", phoneNumber);
+    } else {
+        printf("Nomor telepon: %s\n", phoneNumber);
+    }
+
+    printf("Email: %s\n", email);
+    printf("Pembayaran telah berhasil\n\n");
+
+    do {
+        printf("Apakah anda ingin melanjutkan pembelian lainnya? (y/n): ");
+        scanf("%s", isContinueShopping);
+        
+        if (strcmp(isContinueShopping, "y") == 0) {
+            cashierMenu();
+            break;
+        } else if (strcmp(isContinueShopping, "n") == 0) {
+            printf("Thank you for shopping\n");
+            break; 
+        } else {
+            printf("Input tidak valid. Silahkan masukkan 'y' atau 'n'.\n");
+        }
+    } while (1);
+}
+
+int validatePIN(char *pin) {
+    int pinLength = strlen(pin);
+    for (int i = 0; i < pinLength; i++) {
+        if (pin[i] < '0' || pin[i] > '9') {
+            return 0;
+        }
+    }
+    return pinLength == 4;
+}
+
+int phoneNumberValidation(char *phoneNumber) {
+    int length = strlen(phoneNumber);
+    return (length == 12) && (strncmp(phoneNumber, "08", 2) == 0 || strncmp(phoneNumber, "62", 2) == 0);
 }
 
 void printFormattedPrice(int price) {
-    if (price < 1000) {
-        printf("Rp %d", price);
-        return;
-    }
-    
-    printFormattedPrice(price / 1000);
-    printf(".%03d", price % 1000);
+    printf("Rp%3d.%03d", price / 1000, price % 1000);
 }
 
-int selectedGame() {
-    int selectedGame, index;
-    const char* games[] = {"Mobile Legends", "PUBG", "Free Fire"};
+int adminMenu() {
     int totalGames = sizeof(games) / sizeof(games[0]);
+    int selectedNumberGame;
+    int choice;
 
-    printf("---------Menu----------\n");
-    for (index = 0; index < totalGames; index++) {
-        printf("%d. %s\n", index + 1, games[index]);
-    }
+    printf("\nSelamat Datang di Admin Panel\n\n");
+    selectedNumberGame = selectedGame(games, totalGames);
 
-    printf("Pilih opsi (");
-    for (index = 0; index < totalGames; index++) {
-        printf("%d", index + 1);
-        if (index < totalGames - 1) {
-            printf(", ");
+    while (1) {
+        printf("\n--- Manajemen Paket Top-Up untuk %s ---\n", games[selectedNumberGame - 1].name);
+        printf("1. Tambah Paket\n");
+        printf("2. Edit Paket\n");
+        printf("3. Hapus Paket\n");
+        printf("4. Lihat Detail Paket\n");
+        printf("5. Kembali ke Menu Utama\n");
+        printf("Masukkan pilihan Anda: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1:
+                addPackage(selectedNumberGame);
+                break;
+            case 2:
+                editPackage(selectedNumberGame);
+                break;
+            case 3:
+                deletePackage(selectedNumberGame);
+                break;
+            case 4:
+                viewPackageDetails(selectedNumberGame);
+                break;
+            case 5:
+                printf("Kembali ke Menu Utama...\n");
+                return 0;
+            default:
+                printf("Pilihan tidak valid, silahkan coba lagi.\n");
         }
     }
-    printf("): ");
-
-    scanf("%d", &selectedGame);
-
-    return selectedGame;
 }
+
+void addPackage(int game) {
+    PackageItem newPackage;
+    printf("Masukkan jumlah ");
+    switch(game){
+        case 1:
+        case 3: 
+        printf("Diamond : ");
+        break;
+        case 2:
+        printf("UC : ");
+        break;
+    }
+    scanf("%d", &newPackage.diamondQty);
+    printf("Masukkan harga: ");
+    scanf("%d", &newPackage.price);
+    if(game == 1){
+        strcpy(newPackage.currencyType, "Diamond");
+    }else if (game == 2) {
+        strcpy(newPackage.currencyType, "UC");
+    }else {
+        strcpy(newPackage.currencyType, "Diamond");
+    }
+
+    switch (game) {
+        case 1:
+            packageMlItems[totalPackageMlItems++] = newPackage;
+            printf("Paket Mobile Legend berhasil ditambahkan.\n");
+            break;
+        case 2:
+            packagePubgItems[totalPackagePubgItems++] = newPackage;
+            printf("Paket PUBG berhasil ditambahkan.\n");
+            break;
+        case 3:
+            packageFfItems[totalPackageFfItems++] = newPackage;
+            printf("Paket Free Fire berhasil ditambahkan.\n");
+            break;
+        default:
+            printf("Game tidak valid.\n");
+            break;
+    }
+}
+
+
+
+void managePackage(int game, int packageIndex, PackageItem updatedPackage, int action) {
+    PackageItem *selectedPackages;
+    int *totalPackages;
+
+    switch (game) {
+        case 1: // Mobile Legends
+            selectedPackages = packageMlItems;
+            totalPackages = &totalPackageMlItems;
+            break;
+        case 2: // PUBG
+            selectedPackages = packagePubgItems;
+            totalPackages = &totalPackagePubgItems;
+            break;
+        case 3: // Free Fire
+            selectedPackages = packageFfItems;
+            totalPackages = &totalPackageFfItems;
+            break;
+        default:
+            printf("Game tidak valid.\n");
+            return;
+    }
+
+    if (action == 1) { // Delete
+        if (packageIndex >= 0 && packageIndex < *totalPackages) {
+            for (int i = packageIndex; i < *totalPackages - 1; i++) {
+                selectedPackages[i] = selectedPackages[i + 1];
+            }
+            (*totalPackages)--;
+            printf("Paket berhasil dihapus.\n");
+        } else {
+            printf("Paket tidak valid.\n");
+        }
+    } else if (action == 2) { // Edit
+        if (packageIndex >= 0 && packageIndex < *totalPackages) {
+            selectedPackages[packageIndex] = updatedPackage;
+            printf("Paket berhasil diedit.\n");
+        } else {
+            printf("Paket tidak valid.\n");
+        }
+    }
+}
+
+void deletePackage(int game) {
+    int packageIndex;
+    viewPackageDetails(game);
+    printf("Masukkan nomor paket yang ingin dihapus: ");
+    scanf("%d", &packageIndex);
+    packageIndex--; // Adjust for 0-based index
+
+    managePackage(game, packageIndex, (PackageItem){0}, 1); // Action 1 for delete
+}
+
+void editPackage(int game) {
+    int packageIndex;
+    PackageItem updatedPackage;
+
+    viewPackageDetails(game);
+    printf("Masukkan nomor paket yang ingin diedit: ");
+    scanf("%d", &packageIndex);
+    packageIndex--; // Adjust for 0-based index
+
+    printf("Masukkan jumlah ");
+    switch(game){
+        case 1:
+        case 3: 
+        printf("Diamond baru: ");
+        break;
+        case 2:
+        printf("UC baru: ");
+        break;
+    }
+    scanf("%d", &updatedPackage.diamondQty);
+    printf("Masukkan harga baru: ");
+    scanf("%d", &updatedPackage.price);
+     if(game == 1){
+        strcpy(updatedPackage.currencyType, "Diamond");
+    }else if (game == 2) {
+        strcpy(updatedPackage.currencyType, "UC");
+    }else {
+        strcpy(updatedPackage.currencyType, "Diamond");
+    }
+
+    managePackage(game, packageIndex, updatedPackage, 2); // Action 2 for edit
+}
+
+void viewPackageDetails(int game) {
+    printf("Paket game untuk %s:\n", games[game - 1].name);
+    PackageItem *selectedPackages;
+    int totalPackages;
+
+    switch (game) {
+        case 1:
+            selectedPackages = packageMlItems;
+            totalPackages = totalPackageMlItems;
+            break;
+        case 2:
+            selectedPackages = packagePubgItems;
+            totalPackages = totalPackagePubgItems;
+            break;
+        case 3:
+            selectedPackages = packageFfItems;
+            totalPackages = totalPackageFfItems;
+            break;
+        default:
+            printf("Game tidak valid.\n");
+            return;
+    }
+
+    for (int i = 0; i < totalPackages; i++) {
+        printf("%d. %d %s = ", i + 1, selectedPackages[i].diamondQty, selectedPackages[i].currencyType);
+        printFormattedPrice(selectedPackages[i].price);
+        printf("\n");
+    }
+}
+
