@@ -131,6 +131,7 @@ void gameFlow(int selectedGame, Game *games) {
     int totalPackages;
 
     printf("\n------------------------\n");
+    printf("Pilih game yang ingin Anda ingin top up:\n");
     switch (selectedGame) {
         case 1:
             selectedPackages = packageMlItems;
@@ -237,7 +238,6 @@ void topUpGame(const char *gameName, PackageItem *packages, int totalPackages, i
 
 int selectedGame(Game *games, int totalGames) {
     int choice;
-    printf("Pilih game yang ingin Anda top up:\n");
     for (int i = 0; i < totalGames; i++) {
         printf("%d. %s\n", i + 1, games[i].name);
     }
@@ -418,6 +418,7 @@ int adminMenu() {
     int choice;
 
     printf("\nSelamat Datang di Admin Panel\n\n");
+    printf("Pilih game yang ingin anda ubah :\n");
     selectedNumberGame = selectedGame(games, totalGames);
 
     while (1) {
@@ -610,4 +611,3 @@ void viewPackageDetails(int game) {
         printf("\n");
     }
 }
-
